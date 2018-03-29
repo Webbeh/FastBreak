@@ -1,0 +1,14 @@
+#Break time in ticks
+#0 = instabreak
+#List of material name : https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html
+breaktime:
+  WOOD: 20
+  WEB: 20
+#Only check those data values
+#If no data value is selected for a material that is in the list at the top, all data values will be checked
+#Data as LIST, even if there is only one element. Format is :
+#datavalues:
+#  MATERIAL: [0, 1, 3, 6]
+#  MATERIAL2: [4]
+datavalues:
+  WEB: [1]

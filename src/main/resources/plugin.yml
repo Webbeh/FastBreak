@@ -1,0 +1,9 @@
+name: FastBreak
+version: 1.0.0
+main: ch.geeq.Cut
+author: Weby
+depend: [ProtocolLib]
+commands:
+  wcre:
+    usage: Reloads the custom configuration
+    permission: fastbreak.wcre
