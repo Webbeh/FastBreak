@@ -23,7 +23,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -47,6 +46,7 @@ public class Cut extends JavaPlugin implements Listener {
     private HashMap<Block, Integer> hits = new HashMap<>();
     private HashMap<Block, Integer> digging = new HashMap<>();
     private Set<Block> toRemove = new HashSet<>();
+    private HashMap<Block, Integer> toAdd = new HashMap<>();
     
     @Override
     public void onEnable() {
@@ -85,7 +85,6 @@ public class Cut extends JavaPlugin implements Listener {
         ConfigurationSection breakTimes = config.getConfigurationSection("breaktime");
         ConfigurationSection dataValue = config.getConfigurationSection("datavalues");
         Set<String> materials = breakTimes.getKeys(false);
-        Set<String> dv = dataValue.getKeys(false);
         Bukkit.getLogger().info("[FastBreak] ===== Modified break times for the following blocks =====");
         for (String mat : materials) {
             ++count;
@@ -95,13 +94,15 @@ public class Cut extends JavaPlugin implements Listener {
             Bukkit.getLogger().info("[FastBreak] " + m.name() + " : " + t + " ticks");
         }
         Bukkit.getLogger().info("[FastBreak] ===== Break times finished. Checking data values =====");
-        for(String data : dv)
-        {
-            ++cd;
-            List<Integer> dataval = dataValue.getIntegerList(data);
-            Bukkit.getLogger().info("[FastBreak] Data value(s) for material "+dv+" : "+dataval);
-            Material m = Material.valueOf(data);
-            dataValues.put(m, dataval);
+        if(dataValue!=null) {
+            Set<String> dv = dataValue.getKeys(false);
+            for (String data : dv) {
+                ++cd;
+                List<Integer> dataval = dataValue.getIntegerList(data);
+                Bukkit.getLogger().info("[FastBreak] Data value(s) for material " + dv + " : " + dataval);
+                Material m = Material.valueOf(data);
+                dataValues.put(m, dataval);
+            }
         }
         Bukkit.getLogger().info("[FastBreak] ===== Count : " + count + " modified break times, "+cd+" materials with only a certain data value to check =====");
     
@@ -121,15 +122,15 @@ public class Cut extends JavaPlugin implements Listener {
     
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
-        if (sender == Bukkit.getConsoleSender() || sender.hasPermission("woodcut.wcsm"))
+        if (sender == Bukkit.getConsoleSender() || sender.hasPermission("woodcut.reload")) {
             if (cmd.getName().toLowerCase().equals("wcsm") || cmd.getLabel().equals("wcsm")) {
                 reload();
             }
-        if (sender == Bukkit.getConsoleSender() || sender.hasPermission("woodcut.wcre"))
-            if (cmd.getName().toLowerCase().equals("wcre") || cmd.getLabel().equals("wcre")) {
+            if (cmd.getName().toLowerCase().equals("wcre") || cmd.getName().toLowerCase().equals("fastbreakreload") ||  cmd.getLabel().equals("wcre") || cmd.getLabel().equals("fastbreakreload")) {
                 reloadConfiguration();
                 sender.sendMessage(ChatColor.ITALIC + "[FastBreak] " + ChatColor.GREEN + "" + ChatColor.BOLD + "Reloaded item breaking config");
             }
+        }
         return true;
     }
     
@@ -139,9 +140,12 @@ public class Cut extends JavaPlugin implements Listener {
         try {
             Block b = futureBlock.get();
             if(isValid(b)) {
-                digging.putIfAbsent(b, 0);
-                int d = digging.get(b);
-                digging.put(b, d + 1);
+                int v = 0;
+                if(digging.containsKey(b))
+                {
+                    v = digging.get(b);
+                }
+                toAdd.put(b, v+1);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -173,11 +177,6 @@ public class Cut extends JavaPlugin implements Listener {
     private PacketAdapter blockDig;
     private BukkitRunnable runnable;
   
-    @EventHandler
-    public void onChunkCreate(ChunkLoadEvent event)
-    {
-    }
-    
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event)
     {
@@ -239,6 +238,12 @@ public class Cut extends JavaPlugin implements Listener {
         runnable = new BukkitRunnable() {
             @Override
             public void run() {
+                for (Map.Entry<Block, Integer> entry : toAdd.entrySet()) {
+                    digging.put(entry.getKey(), entry.getValue());
+                }
+                
+                toAdd.clear();
+                
                 for(Iterator<Map.Entry<Block, Integer>> it = digging.entrySet().iterator(); it.hasNext() ;)
                 {
                     Map.Entry<Block, Integer> entry = it.next();

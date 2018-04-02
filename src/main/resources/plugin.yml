@@ -4,6 +4,12 @@ main: ch.geeq.Cut
 author: Weby
 depend: [ProtocolLib]
 commands:
+  wcsm:
+    usage: No usage / legacy command
+    permission: fastbreak.reload
   wcre:
     usage: Reloads the custom configuration
-    permission: fastbreak.wcre
+    permission: fastbreak.reload
+  fastbreakreload:
+    usage: Reloads the custom configuration
+    permission: fastbreak.reload
