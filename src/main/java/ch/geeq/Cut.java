@@ -18,7 +18,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -27,7 +26,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -40,6 +38,9 @@ import java.util.concurrent.Future;
 public class Cut extends JavaPlugin implements Listener {
     private static Plugin plugin;
     private ProtocolManager pmgr;
+    
+    String usePermission = "";
+    String reloadPermission = "fastbreak.reload";
   
     private HashMap<Material, Integer> ticks = new HashMap<>();
     private HashMap<Material, List<Integer>> dataValues = new HashMap<>();
@@ -80,10 +81,40 @@ public class Cut extends JavaPlugin implements Listener {
         int count = 0;
         int cd = 0;
         ticks.clear();
-        File f = new File(getDataFolder(), "config.yml");
-        FileConfiguration config = YamlConfiguration.loadConfiguration(f);
+        FileConfiguration config = getConfig();
+        if(!config.contains("permissions.reload", true)) {
+            config.addDefault("permissions.use", "fastbreak.use");
+            config.addDefault("permissions.reload", "fastbreak.reload");
+            config.options().copyDefaults(true);
+            saveConfig();
+        }
         ConfigurationSection breakTimes = config.getConfigurationSection("breaktime");
         ConfigurationSection dataValue = config.getConfigurationSection("datavalues");
+       
+        ConfigurationSection perm = config.getConfigurationSection("permissions");
+        Set<String> permissions = perm.getKeys(false);
+        for(String pName : permissions)
+        {
+            String p = perm.getString(pName);
+            if(pName.equalsIgnoreCase("use"))
+            {
+                if(p!=null && !p.equalsIgnoreCase(""))
+                {
+                    usePermission=p;
+                }
+            }
+            else if (pName.equalsIgnoreCase("reload"))
+            {
+                if(p!=null && !p.equalsIgnoreCase(""))
+                {
+                    reloadPermission=p;
+                }
+            }
+        }
+        Bukkit.getLogger().info("[FastBreak] ===== Permissions =====");
+        Bukkit.getLogger().info("[FastBreak]   - Use : "+usePermission);
+        Bukkit.getLogger().info("[FastBreak]   - Reload : "+reloadPermission);
+        Bukkit.getLogger().info("[FastBreak] =====");
         Set<String> materials = breakTimes.getKeys(false);
         Bukkit.getLogger().info("[FastBreak] ===== Modified break times for the following blocks =====");
         for (String mat : materials) {
@@ -105,7 +136,6 @@ public class Cut extends JavaPlugin implements Listener {
             }
         }
         Bukkit.getLogger().info("[FastBreak] ===== Count : " + count + " modified break times, "+cd+" materials with only a certain data value to check =====");
-    
     }
     
     @Override
@@ -122,11 +152,8 @@ public class Cut extends JavaPlugin implements Listener {
     
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
-        if (sender == Bukkit.getConsoleSender() || sender.hasPermission("woodcut.reload")) {
-            if (cmd.getName().toLowerCase().equals("wcsm") || cmd.getLabel().equals("wcsm")) {
-                reload();
-            }
-            if (cmd.getName().toLowerCase().equals("wcre") || cmd.getName().toLowerCase().equals("fastbreakreload") ||  cmd.getLabel().equals("wcre") || cmd.getLabel().equals("fastbreakreload")) {
+        if (sender == Bukkit.getConsoleSender() || sender.hasPermission(reloadPermission)) {
+            if (cmd.getName().toLowerCase().equals("fastbreakreload") || cmd.getLabel().equals("fastbreakreload")) {
                 reloadConfiguration();
                 sender.sendMessage(ChatColor.ITALIC + "[FastBreak] " + ChatColor.GREEN + "" + ChatColor.BOLD + "Reloaded item breaking config");
             }
@@ -193,6 +220,8 @@ public class Cut extends JavaPlugin implements Listener {
                 EnumWrappers.PlayerDigType type = event.getPacket().getPlayerDigTypes().readSafely(0);
                 BlockPosition blockPos = event.getPacket().getBlockPositionModifier().readSafely(0);
                 Player p = event.getPlayer();
+                if(!p.hasPermission(usePermission))
+                    return;
                 switch(type){
                     case START_DESTROY_BLOCK:
                         startDigging(p, blockPos);

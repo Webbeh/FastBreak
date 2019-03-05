@@ -1,15 +1,10 @@
 name: FastBreak
-version: 1.0.1
+version: 1.13.2-R0.1
+api-version: 1.13
 main: ch.geeq.Cut
 author: Weby
 depend: [ProtocolLib]
 commands:
-  wcsm:
-    usage: No usage / legacy command
-    permission: fastbreak.reload
-  wcre:
-    usage: Reloads the custom configuration
-    permission: fastbreak.reload
   fastbreakreload:
     usage: Reloads the custom configuration
     permission: fastbreak.reload
