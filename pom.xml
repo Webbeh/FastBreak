@@ -20,7 +20,7 @@
         </plugins>
     </build>
 
-    <name>Wood Cut</name>
+    <name>FastBreak</name>
     <repositories>
         <repository>
             <id>dmulloy2-repo</id>
