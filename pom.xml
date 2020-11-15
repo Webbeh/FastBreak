@@ -19,7 +19,6 @@
             </plugin>
         </plugins>
     </build>
-
     <name>FastBreak</name>
     <repositories>
         <repository>
